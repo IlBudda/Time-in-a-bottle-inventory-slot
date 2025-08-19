@@ -1,0 +1,13 @@
+{
+  "itemGroup.timeinabottleinventoryslot": "Example Mod Tab",
+  "block.timeinabottleinventoryslot.example_block": "Example Block",
+  "item.timeinabottleinventoryslot.example_item": "Example Item",
+
+  "timeinabottleinventoryslot.configuration.title": "Time in a bottle inventory slot Configs",
+  "timeinabottleinventoryslot.configuration.section.timeinabottleinventoryslot.common.toml": "Time in a bottle inventory slot Configs",
+  "timeinabottleinventoryslot.configuration.section.timeinabottleinventoryslot.common.toml.title": "Time in a bottle inventory slot Configs",
+  "timeinabottleinventoryslot.configuration.items": "Item List",
+  "timeinabottleinventoryslot.configuration.logDirtBlock": "Log Dirt Block",
+  "timeinabottleinventoryslot.configuration.magicNumberIntroduction": "Magic Number Text",
+  "timeinabottleinventoryslot.configuration.magicNumber": "Magic Number"
+}
