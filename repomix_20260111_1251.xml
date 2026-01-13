@@ -1,0 +1,1871 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.github/
+  workflows/
+    build.yml
+gradle/
+  wrapper/
+    gradle-wrapper.jar
+    gradle-wrapper.properties
+src/
+  main/
+    java/
+      com/
+        mrguasto/
+          timeinabottleinventoryslot/
+            attachment/
+              ModAttachments.java
+            client/
+              ClientEvents.java
+            command/
+              TimeInABottleCommand.java
+            events/
+              CustomSlotItemTicker.java
+              PlayerDeathHandler.java
+              ServerEvents.java
+              TimeInABottleProxy.java
+            integration/
+              TimeInABottleIntegration.java
+            inventory/
+              TimeInABottleContainer.java
+              TimeInABottleSlot.java
+            mixin/
+              InventoryMenuMixin.java
+              InventoryMenuQuickMoveMixin.java
+              InventoryScreenMixin.java
+            Config.java
+            TimeInABottleInventoryMod.java
+            Timeinabottleinventoryslot.java
+    resources/
+      assets/
+        timeinabottleinventoryslot/
+          lang/
+            en_us.json
+          textures/
+            gui/
+              README.txt
+              slotbackground.png
+      timeinabottleinventoryslot.mixins.json
+    templates/
+      META-INF/
+        neoforge.mods.toml
+.gitattributes
+.gitignore
+build.gradle
+gradle.properties
+gradlew
+gradlew.bat
+LICENSE
+README.md
+settings.gradle
+TEMPLATE_LICENSE.txt
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".github/workflows/build.yml">
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # This is needed to be able to run ./gradlew below
+      # You can run `git update-index --chmod +x gradlew` then remove this step.
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build
+</file>
+
+<file path="gradle/wrapper/gradle-wrapper.properties">
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.14.3-bin.zip
+networkTimeout=10000
+validateDistributionUrl=true
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/attachment/ModAttachments.java">
+package com.mrguasto.timeinabottleinventoryslot.attachment;
+
+import com.mrguasto.timeinabottleinventoryslot.Timeinabottleinventoryslot;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import java.util.function.Supplier;
+
+public class ModAttachments {
+    public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = 
+        DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Timeinabottleinventoryslot.MODID);
+
+    public static final Supplier<AttachmentType<ItemStack>> TIMEINABOTTLESLOT =
+        ATTACHMENT_TYPES.register("time_in_a_bottle_slot", () ->
+            AttachmentType.builder(() -> ItemStack.EMPTY)
+                .serialize(ItemStack.CODEC)
+                .build()
+        );
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/client/ClientEvents.java">
+package com.mrguasto.timeinabottleinventoryslot.client;
+
+import com.mrguasto.timeinabottleinventoryslot.Timeinabottleinventoryslot;
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+
+@EventBusSubscriber(modid = Timeinabottleinventoryslot.MODID, value = Dist.CLIENT)
+public class ClientEvents {
+
+    @SubscribeEvent
+    public static void onScreenInit(ScreenEvent.Init.Post event) {
+        if (event.getScreen() instanceof InventoryScreen inventoryScreen) {
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {
+                // Log per debug - ora lo slot è gestito nativamente dal mixin
+                Timeinabottleinventoryslot.LOGGER.info("Inventory screen opened for player: {}", player.getName().getString());
+                
+                // Ottieni l'oggetto salvato nello slot personalizzato
+                ItemStack timeInABottleStack = player.getData(ModAttachments.TIMEINABOTTLESLOT);
+                if (!timeInABottleStack.isEmpty()) {
+                    Timeinabottleinventoryslot.LOGGER.info("Player has Time in a Bottle: {}", timeInABottleStack.getDisplayName().getString());
+                }
+            }
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/command/TimeInABottleCommand.java">
+package com.mrguasto.timeinabottleinventoryslot.command;
+
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.context.CommandContext;
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+
+public class TimeInABottleCommand {
+    
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(Commands.literal("timeinabottle")
+            .then(Commands.literal("add")
+                .executes(TimeInABottleCommand::addTimeInABottle))
+            .then(Commands.literal("remove")
+                .executes(TimeInABottleCommand::removeTimeInABottle))
+            .then(Commands.literal("check")
+                .executes(TimeInABottleCommand::checkTimeInABottle))
+        );
+    }
+    
+    private static int addTimeInABottle(CommandContext<CommandSourceStack> context) {
+        if (context.getSource().getEntity() instanceof Player player) {
+            // Per il test, aggiungiamo una bottiglia di vetro come placeholder
+            ItemStack bottleStack = new ItemStack(Items.GLASS_BOTTLE);
+            bottleStack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Time in a Bottle (Test)"));
+            
+            player.setData(ModAttachments.TIMEINABOTTLESLOT, bottleStack);
+            context.getSource().sendSuccess(() -> Component.literal("Added Time in a Bottle to custom slot!"), false);
+            return 1;
+        }
+        return 0;
+    }
+    
+    private static int removeTimeInABottle(CommandContext<CommandSourceStack> context) {
+        if (context.getSource().getEntity() instanceof Player player) {
+            player.setData(ModAttachments.TIMEINABOTTLESLOT, ItemStack.EMPTY);
+            context.getSource().sendSuccess(() -> Component.literal("Removed Time in a Bottle from custom slot!"), false);
+            return 1;
+        }
+        return 0;
+    }
+    
+    private static int checkTimeInABottle(CommandContext<CommandSourceStack> context) {
+        if (context.getSource().getEntity() instanceof Player player) {
+            ItemStack stack = player.getData(ModAttachments.TIMEINABOTTLESLOT);
+            if (stack.isEmpty()) {
+                context.getSource().sendSuccess(() -> Component.literal("Custom slot is empty"), false);
+            } else {
+                context.getSource().sendSuccess(() -> Component.literal("Custom slot contains: " + stack.getDisplayName().getString()), false);
+            }
+            return 1;
+        }
+        return 0;
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/events/CustomSlotItemTicker.java">
+package com.mrguasto.timeinabottleinventoryslot.events;
+
+import com.mrguasto.timeinabottleinventoryslot.Timeinabottleinventoryslot;
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+
+@EventBusSubscriber(modid = Timeinabottleinventoryslot.MODID)
+public class CustomSlotItemTicker {
+
+    @SubscribeEvent
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        Player player = event.getEntity();
+        if (player.level().isClientSide()) return;
+
+        ItemStack stack = player.getData(ModAttachments.TIMEINABOTTLESLOT);
+        if (!isTemporalPouch(stack)) return;
+
+        stack.inventoryTick(player.level(), player, 0, false);
+        player.setData(ModAttachments.TIMEINABOTTLESLOT, stack);
+    }
+
+    private static boolean isTemporalPouch(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+
+        ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (key != null && key.getNamespace().equals("gag") && key.getPath().equals("time_sand_pouch")) {
+            return true;
+        }
+
+        // Fallback string-based
+        String itemId = stack.getItem().toString().toLowerCase();
+        String descId = stack.getItem().getDescriptionId().toLowerCase();
+        return descId.contains("time_sand_pouch")
+                || itemId.contains("time_sand_pouch")
+                || descId.contains("timesandpouch")
+                || itemId.contains("timesandpouch");
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/events/PlayerDeathHandler.java">
+package com.mrguasto.timeinabottleinventoryslot.events;
+
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+
+@EventBusSubscriber(modid = "timeinabottleinventoryslot")
+public class PlayerDeathHandler {
+    
+    @SubscribeEvent
+    public static void onPlayerDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof Player player && !player.level().isClientSide) {
+            // Ottieni l'oggetto dal nostro slot personalizzato
+            ItemStack slotItem = player.getData(ModAttachments.TIMEINABOTTLESLOT);
+            
+            if (!slotItem.isEmpty()) {
+                // Crea un ItemEntity per far cadere l'oggetto
+                ItemEntity itemEntity = new ItemEntity(
+                    player.level(), 
+                    player.getX(), 
+                    player.getY(), 
+                    player.getZ(), 
+                    slotItem.copy()
+                );
+                
+                // Aggiungi un po' di velocità casuale come fanno gli altri oggetti
+                itemEntity.setDeltaMovement(
+                    (player.getRandom().nextFloat() - 0.5F) * 0.1F,
+                    player.getRandom().nextFloat() * 0.05F,
+                    (player.getRandom().nextFloat() - 0.5F) * 0.1F
+                );
+                
+                // Spawna l'oggetto nel mondo
+                player.level().addFreshEntity(itemEntity);
+                
+                // Rimuovi l'oggetto dal nostro slot
+                player.setData(ModAttachments.TIMEINABOTTLESLOT, ItemStack.EMPTY);
+            }
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/events/ServerEvents.java">
+package com.mrguasto.timeinabottleinventoryslot.events;
+
+import com.mrguasto.timeinabottleinventoryslot.Timeinabottleinventoryslot;
+import com.mrguasto.timeinabottleinventoryslot.command.TimeInABottleCommand;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+
+@EventBusSubscriber(modid = Timeinabottleinventoryslot.MODID)
+public class ServerEvents {
+
+    @SubscribeEvent
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
+        TimeInABottleCommand.register(event.getDispatcher());
+        Timeinabottleinventoryslot.LOGGER.info("Registered Time in a Bottle commands");
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/events/TimeInABottleProxy.java">
+package com.mrguasto.timeinabottleinventoryslot.events;
+
+import com.mrguasto.timeinabottleinventoryslot.Timeinabottleinventoryslot;
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+
+@EventBusSubscriber(modid = Timeinabottleinventoryslot.MODID)
+public class TimeInABottleProxy {
+    
+    // Evento per debug e logging
+    @SubscribeEvent
+    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        Player player = event.getEntity();
+        ItemStack timeInABottleStack = player.getData(ModAttachments.TIMEINABOTTLESLOT);
+        
+        if (!timeInABottleStack.isEmpty()) {
+            Timeinabottleinventoryslot.LOGGER.info("Player {} logged in with Time in a Bottle: {}", 
+                player.getName().getString(), timeInABottleStack.getDisplayName().getString());
+        }
+    }
+    
+    // Evento per sincronizzare eventuali modifiche
+    @SubscribeEvent
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        if (event.isWasDeath()) {
+            // Mantieni l'oggetto dopo la morte se configurato
+            Player oldPlayer = event.getOriginal();
+            Player newPlayer = event.getEntity();
+            
+            ItemStack timeInABottleStack = oldPlayer.getData(ModAttachments.TIMEINABOTTLESLOT);
+            if (!timeInABottleStack.isEmpty()) {
+                newPlayer.setData(ModAttachments.TIMEINABOTTLESLOT, timeInABottleStack.copy());
+                Timeinabottleinventoryslot.LOGGER.info("Transferred Time in a Bottle after death for player: {}", 
+                    newPlayer.getName().getString());
+            }
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/integration/TimeInABottleIntegration.java">
+package com.mrguasto.timeinabottleinventoryslot.integration;
+
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.fml.ModList;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+public class TimeInABottleIntegration {
+    
+    private static final String TIAB_MOD_ID = "tiab";
+    private static boolean integrationAttempted = false;
+    
+    public static void registerCustomSlotSearch() {
+        if (integrationAttempted) return;
+        integrationAttempted = true;
+        
+        if (!ModList.get().isLoaded(TIAB_MOD_ID)) {
+            System.out.println("[TimeInABottleInventorySlot] Time in a Bottle mod not found, skipping integration");
+            return;
+        }
+        
+        try {
+            // Get the API class
+            Class<?> apiClass = Class.forName("org.mangorage.tiab.common.api.ICommonTimeInABottleAPI");
+            Class<?> searchInterface = Class.forName("org.mangorage.tiab.common.api.ITiabItemSearch");
+            
+            // Get the API instance
+            Object apiSupplier = apiClass.getField("COMMON_API").get(null);
+            Object api = ((java.util.function.Supplier<?>) apiSupplier).get();
+            
+            // Create our search handler using a proxy
+            Object searchHandler = Proxy.newProxyInstance(
+                searchInterface.getClassLoader(),
+                new Class<?>[]{searchInterface},
+                new CustomSlotSearchHandler()
+            );
+            
+            // Register our search handler
+            Method registerMethod = apiClass.getMethod("registerItemSearch", searchInterface);
+            registerMethod.invoke(api, searchHandler);
+            
+            System.out.println("[TimeInABottleInventorySlot] Successfully registered custom slot search handler");
+            
+        } catch (Exception e) {
+            System.err.println("[TimeInABottleInventorySlot] Failed to register Time in a Bottle integration: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private static class CustomSlotSearchHandler implements InvocationHandler {
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            if ("findItem".equals(method.getName()) && args.length == 1 && args[0] instanceof Player) {
+                Player player = (Player) args[0];
+                
+                // Check our custom slot first
+                ItemStack customSlotItem = player.getData(ModAttachments.TIMEINABOTTLESLOT);
+                
+                // If the custom slot has a Time in a Bottle item, return it
+                if (!customSlotItem.isEmpty() && isTimeInABottleItem(customSlotItem)) {
+                    return customSlotItem;
+                }
+                
+                return null; // Return null if no item found in our custom slot
+            }
+            
+            return null;
+        }
+        
+        private boolean isTimeInABottleItem(ItemStack stack) {
+            if (stack.isEmpty()) return false;
+            
+            String itemId = stack.getItem().toString().toLowerCase();
+            String descriptionId = stack.getItem().getDescriptionId().toLowerCase();
+            
+            return itemId.contains("timeinabottle") || 
+                   itemId.contains("time_in_a_bottle") || 
+                   descriptionId.contains("timeinabottle") ||
+                   descriptionId.contains("time_in_a_bottle");
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/inventory/TimeInABottleContainer.java">
+package com.mrguasto.timeinabottleinventoryslot.inventory;
+
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+
+public class TimeInABottleContainer implements Container {
+    private final Player player;
+    
+    public TimeInABottleContainer(Player player) {
+        this.player = player;
+    }
+    
+    @Override
+    public int getContainerSize() {
+        return 1;
+    }
+    
+    @Override
+    public boolean isEmpty() {
+        return getItem(0).isEmpty();
+    }
+    
+    @Override
+    public ItemStack getItem(int slot) {
+        if (slot == 0) {
+            return player.getData(ModAttachments.TIMEINABOTTLESLOT);
+        }
+        return ItemStack.EMPTY;
+    }
+    
+    @Override
+    public ItemStack removeItem(int slot, int amount) {
+        if (slot == 0) {
+            ItemStack current = getItem(0);
+            if (!current.isEmpty()) {
+                ItemStack result = current.split(amount);
+                setItem(0, current);
+                return result;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+    
+    @Override
+    public ItemStack removeItemNoUpdate(int slot) {
+        if (slot == 0) {
+            ItemStack current = getItem(0);
+            setItem(0, ItemStack.EMPTY);
+            return current;
+        }
+        return ItemStack.EMPTY;
+    }
+    
+    @Override
+    public void setItem(int slot, ItemStack stack) {
+        if (slot == 0) {
+            player.setData(ModAttachments.TIMEINABOTTLESLOT, stack);
+            setChanged();
+        }
+    }
+    
+    @Override
+    public void setChanged() {
+        // Notifica che il container è cambiato
+    }
+    
+    @Override
+    public boolean stillValid(Player player) {
+        return this.player == player;
+    }
+    
+    @Override
+    public void clearContent() {
+        setItem(0, ItemStack.EMPTY);
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/inventory/TimeInABottleSlot.java">
+package com.mrguasto.timeinabottleinventoryslot.inventory;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+
+public class TimeInABottleSlot extends Slot {
+    
+    public TimeInABottleSlot(Container container, int slot, int x, int y) {
+        super(container, slot, x, y);
+    }
+    
+    @Override
+    public boolean mayPlace(ItemStack stack) {
+        // Only allow Time in a Bottle items or Temporal Pouch
+        return isTimeInABottle(stack) || isTemporalPouch(stack);
+    }
+    
+    @Override
+    public int getMaxStackSize() {
+        return 1; // Only allow one Time in a Bottle at a time
+    }
+    
+    // Metodo per identificare questo slot come speciale per il rendering
+    public boolean isTimeInABottleSlot() {
+        return true;
+    }
+    
+    private boolean isTimeInABottle(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+
+        // Check if the item is from the Time in a Bottle mod
+        String itemId = stack.getItem().toString();
+        return itemId.contains("timeinabottle") ||
+               itemId.contains("time_in_a_bottle") ||
+               stack.getItem().getDescriptionId().contains("timeinabottle");
+    }
+
+    private boolean isTemporalPouch(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+
+        ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (key != null && key.getNamespace().equals("gag") && key.getPath().equals("time_sand_pouch")) {
+            return true;
+        }
+
+        // Fallback string-based
+        String itemId = stack.getItem().toString().toLowerCase();
+        String descId = stack.getItem().getDescriptionId().toLowerCase();
+        return descId.contains("time_sand_pouch")
+                || itemId.contains("time_sand_pouch")
+                || descId.contains("timesandpouch")
+                || itemId.contains("timesandpouch");
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/mixin/InventoryMenuMixin.java">
+package com.mrguasto.timeinabottleinventoryslot.mixin;
+
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import com.mrguasto.timeinabottleinventoryslot.inventory.TimeInABottleContainer;
+import com.mrguasto.timeinabottleinventoryslot.inventory.TimeInABottleSlot;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(InventoryMenu.class)
+public abstract class InventoryMenuMixin extends AbstractContainerMenu {
+    
+    protected InventoryMenuMixin() {
+        super(null, 0);
+    }
+    
+    @Inject(method = "<init>(Lnet/minecraft/world/entity/player/Inventory;ZLnet/minecraft/world/entity/player/Player;)V", at = @At("TAIL"))
+    private void addTimeInABottleSlot(Inventory inventory, boolean active, Player player, CallbackInfo ci) {
+        // Crea un container personalizzato per il nostro slot
+        TimeInABottleContainer container = new TimeInABottleContainer(player);
+        
+        // Aggiungi lo slot nella posizione corretta (sopra lo slot dello scudo)
+        // Slot dello scudo è a index 45, posizione (77, 62)
+        // Il nostro slot sarà a (77, 8) - sopra lo scudo
+        this.addSlot(new TimeInABottleSlot(container, 0, 77, 8));
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/mixin/InventoryMenuQuickMoveMixin.java">
+package com.mrguasto.timeinabottleinventoryslot.mixin;
+
+import com.mrguasto.timeinabottleinventoryslot.inventory.TimeInABottleSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+@Mixin(InventoryMenu.class)
+public class InventoryMenuQuickMoveMixin {
+    
+    @Inject(method = "quickMoveStack", at = @At("HEAD"), cancellable = true)
+    private void customQuickMoveFromTimeInABottleSlot(Player player, int index, CallbackInfoReturnable<ItemStack> cir) {
+        InventoryMenu menu = (InventoryMenu) (Object) this;
+        Slot slot = menu.slots.get(index);
+        
+        // Se lo shift-click proviene dal nostro slot personalizzato
+        if (slot instanceof TimeInABottleSlot && slot.hasItem()) {
+            ItemStack itemStack = slot.getItem();
+            ItemStack originalStack = itemStack.copy();
+            
+            // Prima prova a mettere nella hotbar (slot 0-8)
+            if (!this.moveItemStackTo(menu, itemStack, 0, 9, false)) {
+                // Se la hotbar è piena, prova l'inventario principale (slot 9-35)
+                if (!this.moveItemStackTo(menu, itemStack, 9, 36, false)) {
+                    // Se anche l'inventario principale è pieno, non fare nulla
+                    cir.setReturnValue(ItemStack.EMPTY);
+                    return;
+                }
+            }
+            
+            if (itemStack.isEmpty()) {
+                slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+            
+            if (itemStack.getCount() == originalStack.getCount()) {
+                cir.setReturnValue(ItemStack.EMPTY);
+                return;
+            }
+            
+            slot.onTake(player, itemStack);
+            cir.setReturnValue(originalStack);
+        }
+    }
+    
+    // Metodo helper per spostare gli ItemStack
+    private boolean moveItemStackTo(InventoryMenu menu, ItemStack stack, int startIndex, int endIndex, boolean reverseDirection) {
+        boolean flag = false;
+        int i = startIndex;
+        if (reverseDirection) {
+            i = endIndex - 1;
+        }
+
+        if (stack.isStackable()) {
+            while (!stack.isEmpty()) {
+                if (reverseDirection) {
+                    if (i < startIndex) {
+                        break;
+                    }
+                } else if (i >= endIndex) {
+                    break;
+                }
+
+                Slot slot = menu.slots.get(i);
+                ItemStack itemstack = slot.getItem();
+                if (!itemstack.isEmpty() && ItemStack.isSameItemSameComponents(stack, itemstack)) {
+                    int j = itemstack.getCount() + stack.getCount();
+                    int maxSize = Math.min(slot.getMaxStackSize(), stack.getMaxStackSize());
+                    if (j <= maxSize) {
+                        stack.setCount(0);
+                        itemstack.setCount(j);
+                        slot.setChanged();
+                        flag = true;
+                    } else if (itemstack.getCount() < maxSize) {
+                        stack.shrink(maxSize - itemstack.getCount());
+                        itemstack.setCount(maxSize);
+                        slot.setChanged();
+                        flag = true;
+                    }
+                }
+
+                if (reverseDirection) {
+                    --i;
+                } else {
+                    ++i;
+                }
+            }
+        }
+
+        if (!stack.isEmpty()) {
+            if (reverseDirection) {
+                i = endIndex - 1;
+            } else {
+                i = startIndex;
+            }
+
+            while (true) {
+                if (reverseDirection) {
+                    if (i < startIndex) {
+                        break;
+                    }
+                } else if (i >= endIndex) {
+                    break;
+                }
+
+                Slot slot = menu.slots.get(i);
+                ItemStack itemstack = slot.getItem();
+                if (itemstack.isEmpty() && slot.mayPlace(stack)) {
+                    if (stack.getCount() > slot.getMaxStackSize()) {
+                        slot.setByPlayer(stack.split(slot.getMaxStackSize()));
+                    } else {
+                        slot.setByPlayer(stack.split(stack.getCount()));
+                    }
+
+                    slot.setChanged();
+                    flag = true;
+                    break;
+                }
+
+                if (reverseDirection) {
+                    --i;
+                } else {
+                    ++i;
+                }
+            }
+        }
+
+        return flag;
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/mixin/InventoryScreenMixin.java">
+package com.mrguasto.timeinabottleinventoryslot.mixin;
+
+import com.mrguasto.timeinabottleinventoryslot.inventory.TimeInABottleSlot;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.Slot;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(InventoryScreen.class)
+public class InventoryScreenMixin {
+
+    // Cornice 18x18 stile vanilla (tu devi creare/sostituire questa PNG)
+    private static final ResourceLocation SLOT_FRAME = ResourceLocation.fromNamespaceAndPath("timeinabottleinventoryslot", "textures/gui/slot_frame.png");
+
+    // Ghost icon 16x16 da mostrare quando lo slot è vuoto (opzionale)
+    private static final ResourceLocation SLOT_GHOST = ResourceLocation.fromNamespaceAndPath("timeinabottleinventoryslot", "textures/gui/slot_ghost.png");
+
+    @Inject(method = "renderBg", at = @At("TAIL"))
+    private void renderTimeInABottleSlotBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci) {
+        InventoryScreen screen = (InventoryScreen) (Object) this;
+
+        for (Slot slot : screen.getMenu().slots) {
+            if (slot instanceof TimeInABottleSlot) {
+                // slot.x/slot.y puntano al contenuto 16x16
+                // La cornice 18x18 parte 1px prima
+                int frameX = screen.getGuiLeft() + slot.x - 1;
+                int frameY = screen.getGuiTop() + slot.y - 1;
+
+                // Disegna cornice 18x18 (texture deve essere 18x18 stile vanilla)
+                guiGraphics.blit(SLOT_FRAME, frameX, frameY, 0, 0, 18, 18, 18, 18);
+
+                // Ghost icon 16x16 centrata SOLO se lo slot è vuoto
+                if (!slot.hasItem()) {
+                    int ghostX = screen.getGuiLeft() + slot.x;
+                    int ghostY = screen.getGuiTop() + slot.y;
+                    guiGraphics.blit(SLOT_GHOST, ghostX, ghostY, 0, 0, 16, 16, 16, 16);
+                }
+
+                break;
+            }
+        }
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/Config.java">
+package com.mrguasto.timeinabottleinventoryslot;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+// An example config class. This is not required, but it's a good idea to have one to keep your config organized.
+// Demonstrates how to use Neo's config APIs
+public class Config {
+    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+    public static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
+            .comment("Whether to log the dirt block on common setup")
+            .define("logDirtBlock", true);
+
+    public static final ModConfigSpec.IntValue MAGIC_NUMBER = BUILDER
+            .comment("A magic number")
+            .defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE);
+
+    public static final ModConfigSpec.ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER
+            .comment("What you want the introduction message to be for the magic number")
+            .define("magicNumberIntroduction", "The magic number is... ");
+
+    // a list of strings that are treated as resource locations for items
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
+            .comment("A list of items to log on common setup.")
+            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), () -> "", Config::validateItemName);
+
+    static final ModConfigSpec SPEC = BUILDER.build();
+
+    private static boolean validateItemName(final Object obj) {
+        return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/TimeInABottleInventoryMod.java">
+package com.mrguasto.timeinabottleinventoryslot;
+
+public class TimeInABottleInventoryMod {
+
+    public static void init() {
+        Timeinabottleinventoryslot.LOGGER.info("Time in a Bottle Inventory Slot mod initialized!");
+    }
+
+    public static boolean isTimeInABottle(String itemName) {
+        if (itemName == null || itemName.isEmpty()) return false;
+        String lowerName = itemName.toLowerCase();
+        return lowerName.contains("time") && lowerName.contains("bottle");
+    }
+}
+</file>
+
+<file path="src/main/java/com/mrguasto/timeinabottleinventoryslot/Timeinabottleinventoryslot.java">
+package com.mrguasto.timeinabottleinventoryslot;
+
+import org.slf4j.Logger;
+import com.mojang.logging.LogUtils;
+import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
+import com.mrguasto.timeinabottleinventoryslot.integration.TimeInABottleIntegration;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+
+// The value here should match an entry in the META-INF/neoforge.mods.toml file
+@Mod(Timeinabottleinventoryslot.MODID)
+public class Timeinabottleinventoryslot {
+    // Define mod id in a common place for everything to reference
+    public static final String MODID = "timeinabottleinventoryslot";
+    // Directly reference a slf4j logger
+    public static final Logger LOGGER = LogUtils.getLogger();
+
+    // The constructor for the mod class is the first code that is run when your mod is loaded.
+    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
+    public Timeinabottleinventoryslot(IEventBus modEventBus, ModContainer modContainer) {
+        // Register the commonSetup method for modloading
+        modEventBus.addListener(this::commonSetup);
+        
+        // Register attachments
+        ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
+    }
+
+    private void commonSetup(FMLCommonSetupEvent event) {
+        // Some common setup code
+        LOGGER.info("Time in a Bottle Inventory Slot mod loaded!");
+        TimeInABottleInventoryMod.init();
+        
+        // Register Time in a Bottle integration
+        event.enqueueWork(() -> {
+            TimeInABottleIntegration.registerCustomSlotSearch();
+        });
+    }
+}
+</file>
+
+<file path="src/main/resources/assets/timeinabottleinventoryslot/lang/en_us.json">
+{
+  "itemGroup.timeinabottleinventoryslot": "Example Mod Tab",
+  "block.timeinabottleinventoryslot.example_block": "Example Block",
+  "item.timeinabottleinventoryslot.example_item": "Example Item",
+
+  "timeinabottleinventoryslot.configuration.title": "Time in a bottle inventory slot Configs",
+  "timeinabottleinventoryslot.configuration.section.timeinabottleinventoryslot.common.toml": "Time in a bottle inventory slot Configs",
+  "timeinabottleinventoryslot.configuration.section.timeinabottleinventoryslot.common.toml.title": "Time in a bottle inventory slot Configs",
+  "timeinabottleinventoryslot.configuration.items": "Item List",
+  "timeinabottleinventoryslot.configuration.logDirtBlock": "Log Dirt Block",
+  "timeinabottleinventoryslot.configuration.magicNumberIntroduction": "Magic Number Text",
+  "timeinabottleinventoryslot.configuration.magicNumber": "Magic Number"
+}
+</file>
+
+<file path="src/main/resources/assets/timeinabottleinventoryslot/textures/gui/README.txt">
+ISTRUZIONI PER LA TEXTURE DELLO SLOT
+====================================
+
+Metti la tua immagine PNG personalizzata in questa cartella con il nome:
+slot_background.png
+
+Specifiche della texture:
+- Dimensioni: 16x16 pixel (dimensione standard del contenuto di uno slot Minecraft)
+- Formato: PNG con supporto per trasparenza
+- La texture verrà renderizzata CENTRATA nello slot (con bordino standard di Minecraft)
+
+Esempio di posizionamento:
+src/main/resources/assets/timeinabottleinventoryslot/textures/gui/slot_background.png
+
+Una volta aggiunta la texture, ricompila la mod con:
+./gradlew build
+
+NOTA: Lo slot avrà automaticamente il bordino "scavato" standard di Minecraft,
+e la tua texture 16x16 verrà centrata all'interno (come gli altri slot).
+</file>
+
+<file path="src/main/resources/timeinabottleinventoryslot.mixins.json">
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.mrguasto.timeinabottleinventoryslot.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "InventoryMenuMixin",
+    "InventoryMenuQuickMoveMixin"
+  ],
+  "client": [
+    "InventoryScreenMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
+</file>
+
+<file path="src/main/templates/META-INF/neoforge.mods.toml">
+# This is an example neoforge.mods.toml file. It contains the data relating to the loading mods.
+# There are several mandatory fields (#mandatory), and many more that are optional (#optional).
+# The overall format is standard TOML format, v0.5.0.
+# Note that there are a couple of TOML lists in this file.
+# Find more information on toml format here:  https://github.com/toml-lang/toml
+
+# The name of the mod loader type to load - for regular FML @Mod mods it should be javafml
+modLoader="javafml" #mandatory
+
+# A version range to match for said mod loader - for regular FML @Mod it will be the FML version. This is currently 2.
+loaderVersion="${loader_version_range}" #mandatory
+
+# The license for you mod. This is mandatory metadata and allows for easier comprehension of your redistributive properties.
+# Review your options at https://choosealicense.com/. All rights reserved is the default copyright stance, and is thus the default here.
+license="${mod_license}"
+
+# A URL to refer people to when problems occur with this mod
+#issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/" #optional
+
+# A list of mods - how many allowed here is determined by the individual mod loader
+[[mods]] #mandatory
+
+# The modid of the mod
+modId="${mod_id}" #mandatory
+
+# The version number of the mod
+version="${mod_version}" #mandatory
+
+# A display name for the mod
+displayName="${mod_name}" #mandatory
+
+# A URL to query for updates for this mod. See the JSON update specification https://docs.neoforged.net/docs/misc/updatechecker/
+#updateJSONURL="https://change.me.example.invalid/updates.json" #optional
+
+# A URL for the "homepage" for this mod, displayed in the mod UI
+#displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
+
+# A file name (in the root of the mod JAR) containing a logo for display
+#logoFile="examplemod.png" #optional
+
+# A text field displayed in the mod UI
+#credits="" #optional
+
+# A text field displayed in the mod UI
+authors="${mod_authors}" #optional
+
+# The description text for the mod (multi line!) (#mandatory)
+description='''${mod_description}'''
+
+# The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
+[[mixins]]
+config="timeinabottleinventoryslot.mixins.json"
+
+# The [[accessTransformers]] block allows you to declare where your AT file is.
+# If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
+#[[accessTransformers]]
+#file="META-INF/accesstransformer.cfg"
+
+# The coremods config file path is not configurable and is always loaded from META-INF/coremods.json
+
+# A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
+[[dependencies.${mod_id}]] #optional
+    # the modid of the dependency
+    modId="neoforge" #mandatory
+    # The type of the dependency. Can be one of "required", "optional", "incompatible" or "discouraged" (case insensitive).
+    # 'required' requires the mod to exist, 'optional' does not
+    # 'incompatible' will prevent the game from loading when the mod exists, and 'discouraged' will show a warning
+    type="required" #mandatory
+    # Optional field describing why the dependency is required or why it is incompatible
+    # reason="..."
+    # The version range of the dependency
+    versionRange="[${neo_version},)" #mandatory
+    # An ordering relationship for the dependency.
+    # BEFORE - This mod is loaded BEFORE the dependency
+    # AFTER - This mod is loaded AFTER the dependency
+    ordering="NONE"
+    # Side this dependency is applied on - BOTH, CLIENT, or SERVER
+    side="BOTH"
+
+# Here's another dependency
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    # This version range declares a minimum of the current minecraft version up to but not including the next major version
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Features are specific properties of the game environment, that you may want to declare you require. This example declares
+# that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
+# stop your mod loading on the server for example.
+#[features.${mod_id}]
+#openGLVersion="[3.2,)"
+</file>
+
+<file path=".gitattributes">
+# Disable autocrlf on generated files, they always generate with LF
+# Add any extra files or paths here to make git stop saying they
+# are changed when only line endings change.
+src/generated/**/.cache/cache text eol=lf
+src/generated/**/*.json text eol=lf
+</file>
+
+<file path=".gitignore">
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+runs
+run-data
+
+repo
+</file>
+
+<file path="build.gradle">
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.107'
+    id 'idea'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    // Define wrapper values here so as to not have to always do so when updating gradlew.properties.
+    // Switching this to Wrapper.DistributionType.ALL will download the full gradle sources that comes with
+    // documentation attached on cursor hover of gradle classes and methods. However, this comes with increased
+    // file size for Gradle. If you do switch this to ALL, run the Gradle wrapper task twice afterwards.
+    // (Verify by checking gradle/wrapper/gradle-wrapper.properties to see if distributionUrl now points to `-all`)
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+version = mod_version
+group = mod_group_id
+
+repositories {
+    // Add here additional repositories if required by some of the dependencies below.
+}
+
+base {
+    archivesName = mod_id
+}
+
+// Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    // Specify the version of NeoForge to use.
+    version = project.neo_version
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+
+    // This line is optional. Access Transformers are automatically detected
+    // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            client()
+
+            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        // This run config launches GameTestServer and runs all registered gametests, then exits.
+        // By default, the server will crash when no gametests are provided.
+        // The gametest system is also enabled by default for other run configs under the /test command.
+        gameTestServer {
+            type = "gameTestServer"
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            data()
+
+            // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
+            // gameDirectory = project.file('run-data')
+
+            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        // applies to all the run configs above
+        configureEach {
+            // Recommended logging data for a userdev environment
+            // The markers can be added/remove as needed separated by commas.
+            // "SCAN": For mods scan.
+            // "REGISTRIES": For firing of registry events.
+            // "REGISTRYDUMP": For getting the contents of all registries.
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+
+            // Recommended logging level for the console
+            // You can set various levels here.
+            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        // define mod <-> source bindings
+        // these are used to tell the game which sources are for which mod
+        // multi mod projects should define one per mod
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+// Include resources generated by data generators.
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+// Sets up a dependency configuration called 'localRuntime'.
+// This configuration should be used instead of 'runtimeOnly' to declare
+// a dependency that will be present for runtime testing but that is
+// "optional", meaning it will not be pulled by dependents of this mod.
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+}
+
+dependencies {
+    // Example optional mod dependency with JEI
+    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
+    // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
+    // compileOnly "mezz.jei:jei-${mc_version}-neoforge-api:${jei_version}"
+    // We add the full version to localRuntime, not runtimeOnly, so that we do not publish a dependency on it
+    // localRuntime "mezz.jei:jei-${mc_version}-neoforge:${jei_version}"
+
+    // Example mod dependency using a mod jar from ./libs with a flat dir repository
+    // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
+    // The group id is ignored when searching -- in this case, it is "blank"
+    // implementation "blank:coolmod-${mc_version}:${coolmod_version}"
+
+    // Example mod dependency using a file as dependency
+    // implementation files("libs/coolmod-${mc_version}-${coolmod_version}.jar")
+
+    // Example project dependency using a sister or child project:
+    // implementation project(":myproject")
+
+    // For more info:
+    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
+    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+
+}
+
+// This block of code expands all declared replace properties in the specified resource targets.
+// A missing property will result in an error. Properties are expanded using ${} Groovy notation.
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+// Include the output of "generateModMetadata" as an input directory for the build
+// this works with both building through Gradle and the IDE.
+sourceSets.main.resources.srcDir generateModMetadata
+// To avoid having to run "generateModMetadata" manually, make it run on every project reload
+neoForge.ideSyncTask generateModMetadata
+
+// Example configuration to allow publishing using the maven-publish plugin
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+// IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+</file>
+
+<file path="gradle.properties">
+# Sets default memory used for gradle commands. Can be overridden by user or command line properties.
+org.gradle.jvmargs=-Xmx1G
+org.gradle.daemon=true
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configuration-cache=true
+
+#read more on this at https://github.com/neoforged/ModDevGradle?tab=readme-ov-file#better-minecraft-parameter-names--javadoc-parchment
+# you can also find the latest versions at: https://parchmentmc.org/docs/getting-started
+parchment_minecraft_version=1.21.1
+parchment_mappings_version=2024.11.17
+# Environment Properties
+# You can find the latest versions here: https://projects.neoforged.net/neoforged/neoforge
+# The Minecraft version must agree with the Neo version to get a valid artifact
+minecraft_version=1.21.1
+# The Minecraft version range can use any release version of Minecraft as bounds.
+# Snapshots, pre-releases, and release candidates are not guaranteed to sort properly
+# as they do not follow standard versioning conventions.
+minecraft_version_range=[1.21.1]
+# The Neo version must agree with the Minecraft version to get a valid artifact
+neo_version=21.1.201
+# The loader version range can only use the major version of FML as bounds
+loader_version_range=[1,)
+
+## Mod Properties
+
+# The unique mod identifier for the mod. Must be lowercase in English locale. Must fit the regex [a-z][a-z0-9_]{1,63}
+# Must match the String constant located in the main mod class annotated with @Mod.
+mod_id=timeinabottleinventoryslot
+# The human-readable display name for the mod.
+mod_name=Time in a bottle inventory slot
+# The license of the mod. Review your options at https://choosealicense.com/. All Rights Reserved is the default.
+mod_license=All Rights Reserved
+# The mod version. See https://semver.org/
+mod_version=1.0.0
+# The group ID for the mod. It is only important when publishing as an artifact to a Maven repository.
+# This should match the base package used for the mod sources.
+# See https://maven.apache.org/guides/mini/guide-naming-conventions.html
+mod_group_id=com.mrguasto.timeinabottleinventoryslot
+# The authors of the mod. This is a simple text string that is used for display purposes in the mod list.
+mod_authors=YourNameHere, OtherNameHere
+# The description of the mod. This is a simple multiline text string that is used for display purposes in the mod list.
+mod_description=Example mod description.\nNewline characters can be used and will be replaced properly.
+</file>
+
+<file path="gradlew">
+#!/bin/sh
+
+#
+# Copyright © 2015-2021 the original authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+##############################################################################
+#
+#   Gradle start up script for POSIX generated by Gradle.
+#
+#   Important for running:
+#
+#   (1) You need a POSIX-compliant shell to run this script. If your /bin/sh is
+#       noncompliant, but you have some other compliant shell such as ksh or
+#       bash, then to run this script, type that shell name before the whole
+#       command line, like:
+#
+#           ksh Gradle
+#
+#       Busybox and similar reduced shells will NOT work, because this script
+#       requires all of these POSIX shell features:
+#         * functions;
+#         * expansions «$var», «${var}», «${var:-default}», «${var+SET}»,
+#           «${var#prefix}», «${var%suffix}», and «$( cmd )»;
+#         * compound commands having a testable exit status, especially «case»;
+#         * various built-in commands including «command», «set», and «ulimit».
+#
+#   Important for patching:
+#
+#   (2) This script targets any POSIX shell, so it avoids extensions provided
+#       by Bash, Ksh, etc; in particular arrays are avoided.
+#
+#       The "traditional" practice of packing multiple parameters into a
+#       space-separated string is a well documented source of bugs and security
+#       problems, so this is (mostly) avoided, by progressively accumulating
+#       options in "$@", and eventually passing that to Java.
+#
+#       Where the inherited environment variables (DEFAULT_JVM_OPTS, JAVA_OPTS,
+#       and GRADLE_OPTS) rely on word-splitting, this is performed explicitly;
+#       see the in-line comments for details.
+#
+#       There are tweaks for specific operating systems such as AIX, CygWin,
+#       Darwin, MinGW, and NonStop.
+#
+#   (3) This script is generated from the Groovy template
+#       https://github.com/gradle/gradle/blob/HEAD/platforms/jvm/plugins-application/src/main/resources/org/gradle/api/internal/plugins/unixStartScript.txt
+#       within the Gradle project.
+#
+#       You can find Gradle at https://github.com/gradle/gradle/.
+#
+##############################################################################
+
+# Attempt to set APP_HOME
+
+# Resolve links: $0 may be a link
+app_path=$0
+
+# Need this for daisy-chained symlinks.
+while
+    APP_HOME=${app_path%"${app_path##*/}"}  # leaves a trailing /; empty if no leading path
+    [ -h "$app_path" ]
+do
+    ls=$( ls -ld "$app_path" )
+    link=${ls#*' -> '}
+    case $link in             #(
+      /*)   app_path=$link ;; #(
+      *)    app_path=$APP_HOME$link ;;
+    esac
+done
+
+# This is normally unused
+# shellcheck disable=SC2034
+APP_BASE_NAME=${0##*/}
+# Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
+APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
+
+# Use the maximum available, or set MAX_FD != -1 to use that value.
+MAX_FD=maximum
+
+warn () {
+    echo "$*"
+} >&2
+
+die () {
+    echo
+    echo "$*"
+    echo
+    exit 1
+} >&2
+
+# OS specific support (must be 'true' or 'false').
+cygwin=false
+msys=false
+darwin=false
+nonstop=false
+case "$( uname )" in                #(
+  CYGWIN* )         cygwin=true  ;; #(
+  Darwin* )         darwin=true  ;; #(
+  MSYS* | MINGW* )  msys=true    ;; #(
+  NONSTOP* )        nonstop=true ;;
+esac
+
+CLASSPATH="\\\"\\\""
+
+
+# Determine the Java command to use to start the JVM.
+if [ -n "$JAVA_HOME" ] ; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+        # IBM's JDK on AIX uses strange locations for the executables
+        JAVACMD=$JAVA_HOME/jre/sh/java
+    else
+        JAVACMD=$JAVA_HOME/bin/java
+    fi
+    if [ ! -x "$JAVACMD" ] ; then
+        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
+    fi
+else
+    JAVACMD=java
+    if ! command -v java >/dev/null 2>&1
+    then
+        die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
+
+Please set the JAVA_HOME variable in your environment to match the
+location of your Java installation."
+    fi
+fi
+
+# Increase the maximum file descriptors if we can.
+if ! "$cygwin" && ! "$darwin" && ! "$nonstop" ; then
+    case $MAX_FD in #(
+      max*)
+        # In POSIX sh, ulimit -H is undefined. That's why the result is checked to see if it worked.
+        # shellcheck disable=SC2039,SC3045
+        MAX_FD=$( ulimit -H -n ) ||
+            warn "Could not query maximum file descriptor limit"
+    esac
+    case $MAX_FD in  #(
+      '' | soft) :;; #(
+      *)
+        # In POSIX sh, ulimit -n is undefined. That's why the result is checked to see if it worked.
+        # shellcheck disable=SC2039,SC3045
+        ulimit -n "$MAX_FD" ||
+            warn "Could not set maximum file descriptor limit to $MAX_FD"
+    esac
+fi
+
+# Collect all arguments for the java command, stacking in reverse order:
+#   * args from the command line
+#   * the main class name
+#   * -classpath
+#   * -D...appname settings
+#   * --module-path (only if needed)
+#   * DEFAULT_JVM_OPTS, JAVA_OPTS, and GRADLE_OPTS environment variables.
+
+# For Cygwin or MSYS, switch paths to Windows format before running java
+if "$cygwin" || "$msys" ; then
+    APP_HOME=$( cygpath --path --mixed "$APP_HOME" )
+    CLASSPATH=$( cygpath --path --mixed "$CLASSPATH" )
+
+    JAVACMD=$( cygpath --unix "$JAVACMD" )
+
+    # Now convert the arguments - kludge to limit ourselves to /bin/sh
+    for arg do
+        if
+            case $arg in                                #(
+              -*)   false ;;                            # don't mess with options #(
+              /?*)  t=${arg#/} t=/${t%%/*}              # looks like a POSIX filepath
+                    [ -e "$t" ] ;;                      #(
+              *)    false ;;
+            esac
+        then
+            arg=$( cygpath --path --ignore --mixed "$arg" )
+        fi
+        # Roll the args list around exactly as many times as the number of
+        # args, so each arg winds up back in the position where it started, but
+        # possibly modified.
+        #
+        # NB: a `for` loop captures its iteration list before it begins, so
+        # changing the positional parameters here affects neither the number of
+        # iterations, nor the values presented in `arg`.
+        shift                   # remove old arg
+        set -- "$@" "$arg"      # push replacement arg
+    done
+fi
+
+
+# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+
+# Collect all arguments for the java command:
+#   * DEFAULT_JVM_OPTS, JAVA_OPTS, and optsEnvironmentVar are not allowed to contain shell fragments,
+#     and any embedded shellness will be escaped.
+#   * For example: A user cannot expect ${Hostname} to be expanded, as it is an environment variable and will be
+#     treated as '${Hostname}' itself on the command line.
+
+set -- \
+        "-Dorg.gradle.appname=$APP_BASE_NAME" \
+        -classpath "$CLASSPATH" \
+        -jar "$APP_HOME/gradle/wrapper/gradle-wrapper.jar" \
+        "$@"
+
+# Stop when "xargs" is not available.
+if ! command -v xargs >/dev/null 2>&1
+then
+    die "xargs is not available"
+fi
+
+# Use "xargs" to parse quoted args.
+#
+# With -n1 it outputs one arg per line, with the quotes and backslashes removed.
+#
+# In Bash we could simply go:
+#
+#   readarray ARGS < <( xargs -n1 <<<"$var" ) &&
+#   set -- "${ARGS[@]}" "$@"
+#
+# but POSIX shell has neither arrays nor command substitution, so instead we
+# post-process each arg (as a line of input to sed) to backslash-escape any
+# character that might be a shell metacharacter, then use eval to reverse
+# that process (while maintaining the separation between arguments), and wrap
+# the whole thing up as a single "set" statement.
+#
+# This will of course break if any of these variables contains a newline or
+# an unmatched quote.
+#
+
+eval "set -- $(
+        printf '%s\n' "$DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS" |
+        xargs -n1 |
+        sed ' s~[^-[:alnum:]+,./:=@_]~\\&~g; ' |
+        tr '\n' ' '
+    )" '"$@"'
+
+exec "$JAVACMD" "$@"
+</file>
+
+<file path="gradlew.bat">
+@rem
+@rem Copyright 2015 the original author or authors.
+@rem
+@rem Licensed under the Apache License, Version 2.0 (the "License");
+@rem you may not use this file except in compliance with the License.
+@rem You may obtain a copy of the License at
+@rem
+@rem      https://www.apache.org/licenses/LICENSE-2.0
+@rem
+@rem Unless required by applicable law or agreed to in writing, software
+@rem distributed under the License is distributed on an "AS IS" BASIS,
+@rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+@rem See the License for the specific language governing permissions and
+@rem limitations under the License.
+@rem
+@rem SPDX-License-Identifier: Apache-2.0
+@rem
+
+@if "%DEBUG%"=="" @echo off
+@rem ##########################################################################
+@rem
+@rem  Gradle startup script for Windows
+@rem
+@rem ##########################################################################
+
+@rem Set local scope for the variables with windows NT shell
+if "%OS%"=="Windows_NT" setlocal
+
+set DIRNAME=%~dp0
+if "%DIRNAME%"=="" set DIRNAME=.
+@rem This is normally unused
+set APP_BASE_NAME=%~n0
+set APP_HOME=%DIRNAME%
+
+@rem Resolve any "." and ".." in APP_HOME to make it shorter.
+for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
+
+@rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
+set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
+
+@rem Find java.exe
+if defined JAVA_HOME goto findJavaFromJavaHome
+
+set JAVA_EXE=java.exe
+%JAVA_EXE% -version >NUL 2>&1
+if %ERRORLEVEL% equ 0 goto execute
+
+echo. 1>&2
+echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH. 1>&2
+echo. 1>&2
+echo Please set the JAVA_HOME variable in your environment to match the 1>&2
+echo location of your Java installation. 1>&2
+
+goto fail
+
+:findJavaFromJavaHome
+set JAVA_HOME=%JAVA_HOME:"=%
+set JAVA_EXE=%JAVA_HOME%/bin/java.exe
+
+if exist "%JAVA_EXE%" goto execute
+
+echo. 1>&2
+echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME% 1>&2
+echo. 1>&2
+echo Please set the JAVA_HOME variable in your environment to match the 1>&2
+echo location of your Java installation. 1>&2
+
+goto fail
+
+:execute
+@rem Setup the command line
+
+set CLASSPATH=
+
+
+@rem Execute Gradle
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %*
+
+:end
+@rem End local scope for the variables with windows NT shell
+if %ERRORLEVEL% equ 0 goto mainEnd
+
+:fail
+rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
+rem the _cmd.exe /c_ return code!
+set EXIT_CODE=%ERRORLEVEL%
+if %EXIT_CODE% equ 0 set EXIT_CODE=1
+if not ""=="%GRADLE_EXIT_CONSOLE%" exit %EXIT_CODE%
+exit /b %EXIT_CODE%
+
+:mainEnd
+if "%OS%"=="Windows_NT" endlocal
+
+:omega
+</file>
+
+<file path="LICENSE">
+MIT License
+
+Copyright (c) 2025 Mr.Guasto
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+<file path="README.md">
+Installation information
+=======
+
+This template repository can be directly cloned to get you started with a new
+mod. Simply create a new repository cloned from this one, by following the
+instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+
+Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+
+If at any point you are missing libraries in your IDE, or you've run into problems you can
+run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
+{this does not affect your code} and then start the process again.
+
+Mapping Names:
+============
+By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
+in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
+license. For the latest license text, refer to the mapping file itself, or the reference copy here:
+https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
+
+Additional Resources: 
+==========
+Community Documentation: https://docs.neoforged.net/  
+NeoForged Discord: https://discord.neoforged.net/
+</file>
+
+<file path="settings.gradle">
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = "https://repo.spongepowered.org/maven" }
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.9.0'
+}
+</file>
+
+<file path="TEMPLATE_LICENSE.txt">
+MIT License
+
+Copyright (c) 2023 NeoForged project
+
+This license applies to the template files as supplied by github.com/NeoForged/MDK
+
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+</files>

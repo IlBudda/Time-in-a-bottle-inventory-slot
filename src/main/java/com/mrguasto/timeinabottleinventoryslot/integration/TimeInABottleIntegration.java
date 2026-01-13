@@ -58,7 +58,7 @@ public class TimeInABottleIntegration {
                 Player player = (Player) args[0];
                 
                 // Check our custom slot first
-                ItemStack customSlotItem = player.getData(ModAttachments.TIME_IN_A_BOTTLE_SLOT);
+                ItemStack customSlotItem = player.getData(ModAttachments.TIMEINABOTTLESLOT);
                 
                 // If the custom slot has a Time in a Bottle item, return it
                 if (!customSlotItem.isEmpty() && isTimeInABottleItem(customSlotItem)) {

@@ -29,7 +29,7 @@ public class TimeInABottleCommand {
             ItemStack bottleStack = new ItemStack(Items.GLASS_BOTTLE);
             bottleStack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Time in a Bottle (Test)"));
             
-            player.setData(ModAttachments.TIME_IN_A_BOTTLE_SLOT, bottleStack);
+            player.setData(ModAttachments.TIMEINABOTTLESLOT, bottleStack);
             context.getSource().sendSuccess(() -> Component.literal("Added Time in a Bottle to custom slot!"), false);
             return 1;
         }
@@ -38,7 +38,7 @@ public class TimeInABottleCommand {
     
     private static int removeTimeInABottle(CommandContext<CommandSourceStack> context) {
         if (context.getSource().getEntity() instanceof Player player) {
-            player.setData(ModAttachments.TIME_IN_A_BOTTLE_SLOT, ItemStack.EMPTY);
+            player.setData(ModAttachments.TIMEINABOTTLESLOT, ItemStack.EMPTY);
             context.getSource().sendSuccess(() -> Component.literal("Removed Time in a Bottle from custom slot!"), false);
             return 1;
         }
@@ -47,7 +47,7 @@ public class TimeInABottleCommand {
     
     private static int checkTimeInABottle(CommandContext<CommandSourceStack> context) {
         if (context.getSource().getEntity() instanceof Player player) {
-            ItemStack stack = player.getData(ModAttachments.TIME_IN_A_BOTTLE_SLOT);
+            ItemStack stack = player.getData(ModAttachments.TIMEINABOTTLESLOT);
             if (stack.isEmpty()) {
                 context.getSource().sendSuccess(() -> Component.literal("Custom slot is empty"), false);
             } else {

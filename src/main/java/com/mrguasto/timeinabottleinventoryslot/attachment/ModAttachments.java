@@ -11,8 +11,8 @@ public class ModAttachments {
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = 
         DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, Timeinabottleinventoryslot.MODID);
 
-    public static final Supplier<AttachmentType<ItemStack>> TIME_IN_A_BOTTLE_SLOT = 
-        ATTACHMENT_TYPES.register("time_in_a_bottle_slot", () -> 
+    public static final Supplier<AttachmentType<ItemStack>> TIMEINABOTTLESLOT =
+        ATTACHMENT_TYPES.register("time_in_a_bottle_slot", () ->
             AttachmentType.builder(() -> ItemStack.EMPTY)
                 .serialize(ItemStack.CODEC)
                 .build()

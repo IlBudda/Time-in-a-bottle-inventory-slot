@@ -6,17 +6,17 @@
       "request": "launch",
       "name": "Client",
       "presentation": {
-        "group": "Mod Development - timeinabottleinventoryslot-template-1.21.1",
+        "group": "Mod Development - Time-in-a-bottle-inventory-slot-main",
         "order": 0
       },
-      "projectName": "timeinabottleinventoryslot-template-1.21.1",
+      "projectName": "Time-in-a-bottle-inventory-slot-main",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/build/moddev/clientRunProgramArgs.txt"
+        "@/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/build/moddev/clientRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/build/moddev/clientRunVmArgs.txt",
-        "-Dfml.modFolders\u003dtimeinabottleinventoryslot%%/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/bin/main"
+        "@/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/build/moddev/clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dtimeinabottleinventoryslot%%/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/bin/main"
       ],
       "cwd": "${workspaceFolder}/run",
       "env": {},
@@ -28,17 +28,17 @@
       "request": "launch",
       "name": "Data",
       "presentation": {
-        "group": "Mod Development - timeinabottleinventoryslot-template-1.21.1",
+        "group": "Mod Development - Time-in-a-bottle-inventory-slot-main",
         "order": 1
       },
-      "projectName": "timeinabottleinventoryslot-template-1.21.1",
+      "projectName": "Time-in-a-bottle-inventory-slot-main",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/build/moddev/dataRunProgramArgs.txt"
+        "@/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/build/moddev/dataRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/build/moddev/dataRunVmArgs.txt",
-        "-Dfml.modFolders\u003dtimeinabottleinventoryslot%%/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/bin/main"
+        "@/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/build/moddev/dataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dtimeinabottleinventoryslot%%/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/bin/main"
       ],
       "cwd": "${workspaceFolder}/run",
       "env": {},
@@ -50,17 +50,17 @@
       "request": "launch",
       "name": "GameTestServer",
       "presentation": {
-        "group": "Mod Development - timeinabottleinventoryslot-template-1.21.1",
+        "group": "Mod Development - Time-in-a-bottle-inventory-slot-main",
         "order": 2
       },
-      "projectName": "timeinabottleinventoryslot-template-1.21.1",
+      "projectName": "Time-in-a-bottle-inventory-slot-main",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/build/moddev/gameTestServerRunProgramArgs.txt"
+        "@/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/build/moddev/gameTestServerRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/build/moddev/gameTestServerRunVmArgs.txt",
-        "-Dfml.modFolders\u003dtimeinabottleinventoryslot%%/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/bin/main"
+        "@/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/build/moddev/gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dtimeinabottleinventoryslot%%/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/bin/main"
       ],
       "cwd": "${workspaceFolder}/run",
       "env": {},
@@ -72,17 +72,17 @@
       "request": "launch",
       "name": "Server",
       "presentation": {
-        "group": "Mod Development - timeinabottleinventoryslot-template-1.21.1",
+        "group": "Mod Development - Time-in-a-bottle-inventory-slot-main",
         "order": 3
       },
-      "projectName": "timeinabottleinventoryslot-template-1.21.1",
+      "projectName": "Time-in-a-bottle-inventory-slot-main",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/build/moddev/serverRunProgramArgs.txt"
+        "@/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/build/moddev/serverRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/build/moddev/serverRunVmArgs.txt",
-        "-Dfml.modFolders\u003dtimeinabottleinventoryslot%%/Users/giorgiomessina/Downloads/timeinabottleinventoryslot-template-1.21.1/bin/main"
+        "@/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/build/moddev/serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dtimeinabottleinventoryslot%%/Users/giorgiomessina/Documents/App_BOT/Minecraft/Time-in-a-bottle-inventory-slot-main/bin/main"
       ],
       "cwd": "${workspaceFolder}/run",
       "env": {},

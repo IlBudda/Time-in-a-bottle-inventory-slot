@@ -28,13 +28,31 @@ public class Timeinabottleinventoryslot {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        // Some common setup code
+        // BUILD DEBUG - stampa versione e verifica risorse
+        LOGGER.info("=== TIMEINABOTTLEINVENTORYSLOT BUILD DEBUG ===");
+        LOGGER.info("BUILD_TIMESTAMP: 2026-01-11T14:30:00Z");
+        LOGGER.info("Checking texture resources...");
+        checkResource("textures/gui/slotframe.png");
+        checkResource("textures/gui/slotghost.png");
+        LOGGER.info("=== END BUILD DEBUG ===");
+
         LOGGER.info("Time in a Bottle Inventory Slot mod loaded!");
         TimeInABottleInventoryMod.init();
-        
+
         // Register Time in a Bottle integration
         event.enqueueWork(() -> {
             TimeInABottleIntegration.registerCustomSlotSearch();
         });
+    }
+
+    private void checkResource(String path) {
+        String fullPath = "/assets/" + MODID + "/" + path;
+        var stream = getClass().getResourceAsStream(fullPath);
+        if (stream != null) {
+            try { stream.close(); } catch (Exception ignored) {}
+            LOGGER.info("  [OK] Found: {}", fullPath);
+        } else {
+            LOGGER.error("  [MISSING] Not found: {}", fullPath);
+        }
     }
 }

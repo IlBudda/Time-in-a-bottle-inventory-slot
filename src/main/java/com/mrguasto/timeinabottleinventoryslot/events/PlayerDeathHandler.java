@@ -15,7 +15,7 @@ public class PlayerDeathHandler {
     public static void onPlayerDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof Player player && !player.level().isClientSide) {
             // Ottieni l'oggetto dal nostro slot personalizzato
-            ItemStack slotItem = player.getData(ModAttachments.TIME_IN_A_BOTTLE_SLOT);
+            ItemStack slotItem = player.getData(ModAttachments.TIMEINABOTTLESLOT);
             
             if (!slotItem.isEmpty()) {
                 // Crea un ItemEntity per far cadere l'oggetto
@@ -38,7 +38,7 @@ public class PlayerDeathHandler {
                 player.level().addFreshEntity(itemEntity);
                 
                 // Rimuovi l'oggetto dal nostro slot
-                player.setData(ModAttachments.TIME_IN_A_BOTTLE_SLOT, ItemStack.EMPTY);
+                player.setData(ModAttachments.TIMEINABOTTLESLOT, ItemStack.EMPTY);
             }
         }
     }

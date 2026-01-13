@@ -15,7 +15,7 @@ public class TimeInABottleProxy {
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         Player player = event.getEntity();
-        ItemStack timeInABottleStack = player.getData(ModAttachments.TIME_IN_A_BOTTLE_SLOT);
+        ItemStack timeInABottleStack = player.getData(ModAttachments.TIMEINABOTTLESLOT);
         
         if (!timeInABottleStack.isEmpty()) {
             Timeinabottleinventoryslot.LOGGER.info("Player {} logged in with Time in a Bottle: {}", 
@@ -31,9 +31,9 @@ public class TimeInABottleProxy {
             Player oldPlayer = event.getOriginal();
             Player newPlayer = event.getEntity();
             
-            ItemStack timeInABottleStack = oldPlayer.getData(ModAttachments.TIME_IN_A_BOTTLE_SLOT);
+            ItemStack timeInABottleStack = oldPlayer.getData(ModAttachments.TIMEINABOTTLESLOT);
             if (!timeInABottleStack.isEmpty()) {
-                newPlayer.setData(ModAttachments.TIME_IN_A_BOTTLE_SLOT, timeInABottleStack.copy());
+                newPlayer.setData(ModAttachments.TIMEINABOTTLESLOT, timeInABottleStack.copy());
                 Timeinabottleinventoryslot.LOGGER.info("Transferred Time in a Bottle after death for player: {}", 
                     newPlayer.getName().getString());
             }

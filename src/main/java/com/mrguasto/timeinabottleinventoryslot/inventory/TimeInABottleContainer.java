@@ -25,7 +25,7 @@ public class TimeInABottleContainer implements Container {
     @Override
     public ItemStack getItem(int slot) {
         if (slot == 0) {
-            return player.getData(ModAttachments.TIME_IN_A_BOTTLE_SLOT);
+            return player.getData(ModAttachments.TIMEINABOTTLESLOT);
         }
         return ItemStack.EMPTY;
     }
@@ -56,7 +56,7 @@ public class TimeInABottleContainer implements Container {
     @Override
     public void setItem(int slot, ItemStack stack) {
         if (slot == 0) {
-            player.setData(ModAttachments.TIME_IN_A_BOTTLE_SLOT, stack);
+            player.setData(ModAttachments.TIMEINABOTTLESLOT, stack);
             setChanged();
         }
     }

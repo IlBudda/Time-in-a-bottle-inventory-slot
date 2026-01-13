@@ -12,56 +12,36 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(InventoryScreen.class)
 public class InventoryScreenMixin {
-    
-    private static final ResourceLocation SLOT_BACKGROUND = ResourceLocation.fromNamespaceAndPath("timeinabottleinventoryslot", "textures/gui/slot_background.png");
-    
+
+    // Cornice 18x18 stile vanilla
+    private static final ResourceLocation SLOT_FRAME = ResourceLocation.fromNamespaceAndPath("timeinabottleinventoryslot", "textures/gui/slotframe.png");
+
+    // Ghost icon 16x16 da mostrare quando lo slot è vuoto
+    private static final ResourceLocation SLOT_GHOST = ResourceLocation.fromNamespaceAndPath("timeinabottleinventoryslot", "textures/gui/slotghost.png");
+
     @Inject(method = "renderBg", at = @At("TAIL"))
     private void renderTimeInABottleSlotBackground(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci) {
         InventoryScreen screen = (InventoryScreen) (Object) this;
-        
-        // Trova il nostro slot personalizzato e disegna la texture
+
         for (Slot slot : screen.getMenu().slots) {
             if (slot instanceof TimeInABottleSlot) {
-                int slotX = screen.getGuiLeft() + slot.x;
-                int slotY = screen.getGuiTop() + slot.y;
-                
-                // Disegna lo slot 16x16 con background #8b8b8b
-                this.renderSlotBorder(guiGraphics, slotX, slotY);
-                
-                // Renderizza il PNG placeholder SOLO se lo slot è vuoto
+                // slot.x/slot.y puntano al contenuto 16x16
+                // La cornice 18x18 parte 1px prima
+                int frameX = screen.getGuiLeft() + slot.x - 1;
+                int frameY = screen.getGuiTop() + slot.y - 1;
+
+                // Disegna cornice 18x18 (texture deve essere 18x18 stile vanilla)
+                guiGraphics.blit(SLOT_FRAME, frameX, frameY, 0, 0, 18, 18, 18, 18);
+
+                // Ghost icon 16x16 centrata SOLO se lo slot è vuoto
                 if (!slot.hasItem()) {
-                    // PNG 16x16 perfettamente centrato nello slot 16x16
-                    guiGraphics.blit(SLOT_BACKGROUND, slotX, slotY, 0, 0, 16, 16, 16, 16);
+                    int ghostX = screen.getGuiLeft() + slot.x;
+                    int ghostY = screen.getGuiTop() + slot.y;
+                    guiGraphics.blit(SLOT_GHOST, ghostX, ghostY, 0, 0, 16, 16, 16, 16);
                 }
-                
-                break; // Dovrebbe esserci solo uno slot
+
+                break;
             }
         }
-    }
-    
-    // Metodo per disegnare lo slot 16x16 con background #8b8b8b
-    private void renderSlotBorder(GuiGraphics guiGraphics, int x, int y) {
-        // Colori per lo slot 16x16
-        int darkColor = 0xFF373737;   // Grigio scuro per ombra (bordo superiore e sinistro)
-        int lightColor = 0xFFFFFFFF;  // Bianco per luce (bordo inferiore e destro)
-        int bgColor = 0xFF8B8B8B;     // Background #8b8b8b come richiesto
-        
-        // Background dello slot 16x16
-        guiGraphics.fill(x, y, x + 16, y + 16, bgColor);
-        
-        // Bordo superiore (scuro - ombra)
-        guiGraphics.fill(x, y, x + 16, y + 1, darkColor);
-        
-        // Bordo sinistro (scuro - ombra)
-        guiGraphics.fill(x, y, x + 1, y + 16, darkColor);
-        
-        // Bordo inferiore (chiaro - luce)
-        guiGraphics.fill(x, y + 15, x + 16, y + 16, lightColor);
-        
-        // Bordo destro (chiaro - luce)
-        guiGraphics.fill(x + 15, y, x + 16, y + 16, lightColor);
-        
-        // Area interna dello slot (background #8b8b8b)
-        guiGraphics.fill(x + 1, y + 1, x + 15, y + 15, bgColor);
     }
 }

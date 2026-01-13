@@ -23,7 +23,7 @@ public class ClientEvents {
                 Timeinabottleinventoryslot.LOGGER.info("Inventory screen opened for player: {}", player.getName().getString());
                 
                 // Ottieni l'oggetto salvato nello slot personalizzato
-                ItemStack timeInABottleStack = player.getData(ModAttachments.TIME_IN_A_BOTTLE_SLOT);
+                ItemStack timeInABottleStack = player.getData(ModAttachments.TIMEINABOTTLESLOT);
                 if (!timeInABottleStack.isEmpty()) {
                     Timeinabottleinventoryslot.LOGGER.info("Player has Time in a Bottle: {}", timeInABottleStack.getDisplayName().getString());
                 }
