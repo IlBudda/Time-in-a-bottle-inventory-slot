@@ -5,9 +5,12 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "InventoryMenuMixin",
-    "InventoryMenuQuickMoveMixin"
+    "InventoryMenuQuickMoveMixin",
+    "ServerGamePacketListenerImplMixin",
+    "SlotAccessor"
   ],
   "client": [
+    "CreativeModeInventoryScreenMixin",
     "InventoryScreenMixin"
   ],
   "server": [],
