@@ -3,7 +3,7 @@ package com.mrguasto.timeinabottleinventoryslot.events;
 import com.mrguasto.timeinabottleinventoryslot.Timeinabottleinventoryslot;
 import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -21,7 +21,7 @@ public class CustomSlotItemTicker {
         ItemStack stack = player.getData(ModAttachments.TIMEINABOTTLESLOT);
         if (!isTemporalPouch(stack)) return;
 
-        stack.inventoryTick(player.level(), player, 0, false);
+        stack.inventoryTick(player.level(), player, null);
         player.setData(ModAttachments.TIMEINABOTTLESLOT, stack);
     }
 
@@ -30,7 +30,7 @@ public class CustomSlotItemTicker {
             return false;
         }
 
-        ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        Identifier key = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (key != null && key.getNamespace().equals("gag") && key.getPath().equals("time_sand_pouch")) {
             return true;
         }

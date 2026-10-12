@@ -14,7 +14,7 @@ public class ModAttachments {
     public static final Supplier<AttachmentType<ItemStack>> TIMEINABOTTLESLOT =
         ATTACHMENT_TYPES.register("time_in_a_bottle_slot", () ->
             AttachmentType.builder(() -> ItemStack.EMPTY)
-                .serialize(ItemStack.CODEC)
+                .serialize(ItemStack.MAP_CODEC, stack -> !stack.isEmpty())
                 .build()
         );
 }

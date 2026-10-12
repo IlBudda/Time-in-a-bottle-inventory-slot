@@ -1,7 +1,7 @@
 package com.mrguasto.timeinabottleinventoryslot.inventory;
 
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.Container;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -45,7 +45,7 @@ public class TimeInABottleSlot extends Slot {
             return false;
         }
 
-        ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        Identifier key = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (key != null && key.getNamespace().equals("gag") && key.getPath().equals("time_sand_pouch")) {
             return true;
         }

@@ -13,7 +13,7 @@ public class PlayerDeathHandler {
     
     @SubscribeEvent
     public static void onPlayerDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof Player player && !player.level().isClientSide) {
+        if (event.getEntity() instanceof Player player && !player.level().isClientSide()) {
             // Ottieni l'oggetto dal nostro slot personalizzato
             ItemStack slotItem = player.getData(ModAttachments.TIMEINABOTTLESLOT);
             
