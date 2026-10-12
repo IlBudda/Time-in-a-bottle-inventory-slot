@@ -3,6 +3,7 @@ package com.mrguasto.timeinabottleinventoryslot.mixin;
 import com.mrguasto.timeinabottleinventoryslot.attachment.ModAttachments;
 import com.mrguasto.timeinabottleinventoryslot.inventory.TimeInABottleContainer;
 import com.mrguasto.timeinabottleinventoryslot.inventory.TimeInABottleSlot;
+import net.neoforged.fml.ModList;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -27,9 +28,14 @@ public abstract class InventoryMenuMixin extends AbstractContainerMenu {
         // Crea un container personalizzato per il nostro slot
         TimeInABottleContainer container = new TimeInABottleContainer(player);
         
-        // Aggiungi lo slot nella posizione corretta (sopra lo slot dello scudo)
-        // Slot dello scudo è a index 45, posizione (77, 62)
-        // Il nostro slot sarà a (77, 8) - sopra lo scudo
-        this.addSlot(new TimeInABottleSlot(container, 0, 77, 8));
+        // Posizione di default (77, 8): a destra del modello del giocatore.
+        // Extreme Sound Muffler mette il suo pulsante proprio li', quindi se e' presente scendiamo di uno slot.
+        int y = isSoundMufflerLoaded() ? 26 : 8;
+        this.addSlot(new TimeInABottleSlot(container, 0, 77, y));
+    }
+
+    private static boolean isSoundMufflerLoaded() {
+        ModList mods = ModList.get();
+        return mods != null && (mods.isLoaded("extremesoundmuffler") || mods.isLoaded("extreme_sound_muffler"));
     }
 }
