@@ -46,14 +46,16 @@ public class InventoryMenuQuickMoveMixin {
             ItemStack itemStack = slot.getItem();
             ItemStack originalStack = itemStack.copy();
             
-            // Prima prova a mettere nella hotbar (slot 0-8)
-            if (!this.moveItemStackTo(menu, itemStack, 0, 9, false)) {
-                // Se la hotbar è piena, prova l'inventario principale (slot 9-35)
-                if (!this.moveItemStackTo(menu, itemStack, 9, 36, false)) {
-                    // Se anche l'inventario principale è pieno, non fare nulla
-                    cir.setReturnValue(ItemStack.EMPTY);
-                    return;
-                }
+            // Ordine di preferenza: slot selezionato della hotbar, resto della hotbar, inventario principale.
+            // Nel menu dell'inventario 0-8 sono crafting e armatura: hotbar = 36-44, inventario = 9-35.
+            int selected = InventoryMenu.USE_ROW_SLOT_START + player.getInventory().getSelectedSlot();
+            boolean moved = this.moveItemStackTo(menu, itemStack, selected, selected + 1, false)
+                    || this.moveItemStackTo(menu, itemStack, InventoryMenu.USE_ROW_SLOT_START, InventoryMenu.USE_ROW_SLOT_END, false)
+                    || this.moveItemStackTo(menu, itemStack, InventoryMenu.INV_SLOT_START, InventoryMenu.INV_SLOT_END, false);
+            if (!moved) {
+                // Hotbar e inventario pieni: non fare nulla
+                cir.setReturnValue(ItemStack.EMPTY);
+                return;
             }
             
             if (itemStack.isEmpty()) {
