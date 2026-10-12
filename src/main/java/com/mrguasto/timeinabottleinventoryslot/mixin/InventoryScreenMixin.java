@@ -22,7 +22,7 @@ public class InventoryScreenMixin {
     private static final Identifier SLOT_GHOST = Identifier.fromNamespaceAndPath("timeinabottleinventoryslot", "textures/gui/slotghost.png");
 
     @Inject(method = "extractBackground", at = @At("TAIL"))
-    private void renderTimeInABottleSlotBackground(GuiGraphicsExtractor guiGraphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci) {
+    private void renderTimeInABottleSlotBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         InventoryScreen screen = (InventoryScreen) (Object) this;
 
         for (Slot slot : screen.getMenu().slots) {
