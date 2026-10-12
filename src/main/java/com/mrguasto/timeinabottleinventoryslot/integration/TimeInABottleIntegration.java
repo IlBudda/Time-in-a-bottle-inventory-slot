@@ -8,6 +8,7 @@ import net.neoforged.fml.ModList;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Optional;
 
 public class TimeInABottleIntegration {
     
@@ -54,23 +55,48 @@ public class TimeInABottleIntegration {
     private static class CustomSlotSearchHandler implements InvocationHandler {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            if ("findItem".equals(method.getName()) && args.length == 1 && args[0] instanceof Player) {
-                Player player = (Player) args[0];
-                
-                // Check our custom slot first
-                ItemStack customSlotItem = player.getData(ModAttachments.TIMEINABOTTLESLOT);
-                
-                // If the custom slot has a Time in a Bottle item, return it
-                if (!customSlotItem.isEmpty() && isTimeInABottleItem(customSlotItem)) {
-                    return customSlotItem;
-                }
-                
-                return null; // Return null if no item found in our custom slot
+            Class<?> returnType = method.getReturnType();
+
+            // Metodi di java.lang.Object chiamati sul proxy
+            switch (method.getName()) {
+                case "hashCode": return System.identityHashCode(proxy);
+                case "equals": return args != null && args.length == 1 && proxy == args[0];
+                case "toString": return "TimeInABottleInventorySlot search handler";
+                default: break;
             }
-            
+
+            if (returnType == ItemStack.class || returnType == Object.class) {
+                ItemStack found = ItemStack.EMPTY;
+
+                if ("findItem".equals(method.getName()) && args != null) {
+                    for (Object arg : args) {
+                        if (arg instanceof Player player) {
+                            // Controlla prima il nostro slot personalizzato
+                            ItemStack customSlotItem = player.getData(ModAttachments.TIMEINABOTTLESLOT);
+                            if (!customSlotItem.isEmpty() && isTimeInABottleItem(customSlotItem)) {
+                                found = customSlotItem;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // Mai null: Time in a Bottle si aspetta uno ItemStack (vuoto se non trovato)
+                return found;
+            }
+
+            if (returnType == Optional.class) {
+                return Optional.empty();
+            }
+            if (returnType == boolean.class) {
+                return false;
+            }
+            if (returnType == int.class) {
+                return 0;
+            }
             return null;
         }
-        
+
         private boolean isTimeInABottleItem(ItemStack stack) {
             if (stack.isEmpty()) return false;
             
