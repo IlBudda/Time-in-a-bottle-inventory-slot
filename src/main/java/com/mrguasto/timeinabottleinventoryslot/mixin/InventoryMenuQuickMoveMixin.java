@@ -18,6 +18,29 @@ public class InventoryMenuQuickMoveMixin {
         InventoryMenu menu = (InventoryMenu) (Object) this;
         Slot slot = menu.slots.get(index);
         
+        // Shift-click da un altro slot: se contiene Time in a Bottle e il nostro slot e' libero, spostalo li'
+        if (!(slot instanceof TimeInABottleSlot) && slot.hasItem()) {
+            ItemStack source = slot.getItem();
+            for (Slot candidate : menu.slots) {
+                if (candidate instanceof TimeInABottleSlot target) {
+                    if (!target.hasItem() && target.mayPlace(source)) {
+                        ItemStack moved = source.split(1);
+                        target.setByPlayer(moved.copy());
+                        if (source.isEmpty()) {
+                            slot.setByPlayer(ItemStack.EMPTY);
+                        } else {
+                            slot.setChanged();
+                        }
+                        cir.setReturnValue(source.isEmpty() ? moved : ItemStack.EMPTY);
+                        return;
+                    }
+                    break;
+                }
+            }
+            // Altrimenti si lascia fare al comportamento vanilla
+            return;
+        }
+
         // Se lo shift-click proviene dal nostro slot personalizzato
         if (slot instanceof TimeInABottleSlot && slot.hasItem()) {
             ItemStack itemStack = slot.getItem();
